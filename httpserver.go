@@ -356,6 +356,31 @@ func (server *Server) initHTTPServer() {
 		})
 	})
 
+	m.HandleFunc("/shell/background/get", func(w http.ResponseWriter, r *http.Request) {
+                values := r.URL.Query()
+                command := values.Get("command")
+		if command == "" {
+                        command = values.Get("c")
+		}
+		c := Command{
+			Args:  []string{command},
+			Shell: true,
+		}
+		pid, err := c.StartBackground()
+		if err != nil {
+			renderJSON(w, map[string]interface{}{
+				"success":     false,
+				"description": err.Error(),
+			})
+			return
+		}
+		renderJSON(w, map[string]interface{}{
+			"success":     true,
+			"pid":         pid,
+			"description": fmt.Sprintf("Successfully started program: %v", command),
+		})
+	})
+
 	m.HandleFunc("/shell/stream", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		command := r.FormValue("command")
